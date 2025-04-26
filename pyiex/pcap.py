@@ -34,83 +34,64 @@ class EnhancedPacketBlock(BaseModel):
 
 type Block = Union[
     HeaderBlock,
-    InterfaceDescriptionBlock
+    InterfaceDescriptionBlock,
+    EnhancedPacketBlock
 ]
 
 
-def _read_header_block(source: BufferedIOBase) -> HeaderBlock:
-    block_type = source.read(4)
-
-    if block_type != BlockType.HEADER:
-        raise FormatError
-
-    block_length = source.read(4)
-    magic_bytes = source.read(4)
-    byte_order: ByteOrder
-
-    if magic_bytes == b"\x1a\x2b\x3c\x4d":
-        byte_order = "big"
-    elif magic_bytes == b"\x4d\x3c\x2b\x1a":
-        byte_order = "little"
-    else:
-        raise FormatError
-
-    block_length = int.from_bytes(block_length, byte_order)
-
-    source.seek(block_length - 12, os.SEEK_CUR)
-
+def _decode_header_block(data: bytes, byte_order: ByteOrder) -> HeaderBlock:
     return HeaderBlock(byte_order=byte_order)
 
 
-def _read_interface_description_block(
-    source: BufferedIOBase,
+def _decode_interface_description_block(
+    data: bytes,
     byte_order: ByteOrder
 ) -> InterfaceDescriptionBlock:
-    block_type = source.read(4)
-
-    if block_type != BlockType.INTERFACE_DESCRIPTION:
-        raise FormatError
-
-    block_length = int.from_bytes(source.read(4), byte_order)
-
-    source.seek(block_length - 8, os.SEEK_CUR)
-
     return None
 
 
-def _read_enhanced_packet_block(
-    source: BufferedIOBase,
+def _decode_enhanced_packet_block(
+    data: bytes,
     byte_order: ByteOrder
 ) -> EnhancedPacketBlock:
-    block_type = source.read(4)
-
-    if block_type != BlockType.ENHANCED_PACKET:
-        raise FormatError
-    
-    block_length = int.from_bytes(source.read(4), byte_order)
-
-    source.seek(block_length - 8, os.SEEK_CUR)
-
     return None
 
 
-def _read_block(source: BufferedIOBase, byte_order: Optional[ByteOrder]) -> Block:
-    block_type = source.read(4)
+def _read_block(
+    source: BufferedIOBase,
+    byte_order: Optional[ByteOrder]
+) -> Optional[Block]:
+    buffer = source.read(8)
 
-    if not block_type:
-        raise EOFError
+    if not buffer:
+        return None
 
-    source.seek(-4, os.SEEK_CUR)
+    block_type, block_length = buffer[0:4], buffer[4:8]
 
-    match block_type:
-        case BlockType.HEADER:
-            return _read_header_block(source)
-        case BlockType.INTERFACE_DESCRIPTION:
-            return _read_interface_description_block(source, byte_order)
-        case BlockType.ENHANCED_PACKET:
-            return _read_enhanced_packet_block(source, byte_order)
-        case _:
+    if block_type == BlockType.HEADER:
+        magic_bytes = source.read(4)
+        byte_order: ByteOrder
+
+        if magic_bytes == b"\x1a\x2b\x3c\x4d":
+            byte_order = "big"
+        elif magic_bytes == b"\x4d\x3c\x2b\x1a":
+            byte_order = "little"
+        else:
             raise FormatError
+
+        data = source.read(int.from_bytes(block_length, byte_order) - 12)
+
+        return _decode_header_block(data, byte_order)
+    elif block_type == BlockType.INTERFACE_DESCRIPTION:
+        data = source.read(int.from_bytes(block_length, byte_order) - 8)
+
+        return _decode_interface_description_block(data, byte_order)
+    elif block_type == BlockType.ENHANCED_PACKET:
+        data = source.read(int.from_bytes(block_length, byte_order) - 8)
+
+        return _decode_enhanced_packet_block(data, byte_order)
+    else:
+        raise NotImplementedError
 
 
 class Stream:
@@ -125,17 +106,19 @@ class Stream:
         return self
 
     def __next__(self) -> Block:
-        block: Block
+        byte_order = self._last_header_block.byte_order \
+            if self._last_header_block else None
 
-        if self._last_header_block is None:
-            block = _read_header_block(self._source)
-        else:
-            block = _read_block(
-                self._source,
-                self._last_header_block.byte_order
-            )
+        block = _read_block(self._source, byte_order)
 
-        if isinstance(block, HeaderBlock):
+        if block is None:
+            if not self._last_header_block:
+                raise EOFError
+
+            raise StopIteration
+        elif isinstance(block, HeaderBlock):
             self._last_header_block = block
+        elif not self._last_header_block:
+            raise FormatError
 
         return block

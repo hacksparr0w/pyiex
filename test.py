@@ -4,7 +4,7 @@ import pyiex.pcap
 def main():
     source = open("./test.pcap", "rb")
 
-    for i, x in enumerate(pyiex.pcap.Stream(source)):
+    for x in pyiex.pcap.Stream(source):
         pass
 
 

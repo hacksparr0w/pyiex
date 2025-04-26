@@ -1,5 +1,3 @@
-import os
-
 from io import BufferedIOBase
 from typing import Iterator, Optional, Union
 
@@ -9,15 +7,13 @@ from .format import ByteOrder, FormatError
 
 
 __all__ = (
-    "Stream",
-    "StreamState"
+    "Block",
+    "EnhancedPacketBlock",
+    "HeaderBlock",
+    "InterfaceDescriptionBlock",
+
+    "stream"
 )
-
-
-class BlockType:
-    HEADER = b"\x0a\x0d\x0d\x0a"
-    INTERFACE_DESCRIPTION = b"\x01\x00\x00\x00"
-    ENHANCED_PACKET = b"\x06\x00\x00\x00"
 
 
 class HeaderBlock(BaseModel):
@@ -29,7 +25,7 @@ class InterfaceDescriptionBlock(BaseModel):
 
 
 class EnhancedPacketBlock(BaseModel):
-    pass
+    payload: bytes
 
 
 type Block = Union[
@@ -37,6 +33,12 @@ type Block = Union[
     InterfaceDescriptionBlock,
     EnhancedPacketBlock
 ]
+
+
+class _BlockType:
+    HEADER = b"\x0a\x0d\x0d\x0a"
+    INTERFACE_DESCRIPTION = b"\x01\x00\x00\x00"
+    ENHANCED_PACKET = b"\x06\x00\x00\x00"
 
 
 def _decode_header_block(data: bytes, byte_order: ByteOrder) -> HeaderBlock:
@@ -47,14 +49,17 @@ def _decode_interface_description_block(
     data: bytes,
     byte_order: ByteOrder
 ) -> InterfaceDescriptionBlock:
-    return "a"
+    return InterfaceDescriptionBlock()
 
 
 def _decode_enhanced_packet_block(
     data: bytes,
     byte_order: ByteOrder
 ) -> EnhancedPacketBlock:
-    return "a"
+    original_length = int.from_bytes(data[16:20], byte_order)
+    payload = data[20:20 + original_length]
+
+    return EnhancedPacketBlock(payload=payload)
 
 
 def _read_block(
@@ -68,7 +73,7 @@ def _read_block(
 
     block_type, block_length = buffer[0:4], buffer[4:8]
 
-    if block_type == BlockType.HEADER:
+    if block_type == _BlockType.HEADER:
         magic_bytes = source.read(4)
         byte_order: ByteOrder
 
@@ -82,11 +87,11 @@ def _read_block(
         data = source.read(int.from_bytes(block_length, byte_order) - 12)
 
         return _decode_header_block(data, byte_order)
-    elif block_type == BlockType.INTERFACE_DESCRIPTION:
+    elif block_type == _BlockType.INTERFACE_DESCRIPTION:
         data = source.read(int.from_bytes(block_length, byte_order) - 8)
 
         return _decode_interface_description_block(data, byte_order)
-    elif block_type == BlockType.ENHANCED_PACKET:
+    elif block_type == _BlockType.ENHANCED_PACKET:
         data = source.read(int.from_bytes(block_length, byte_order) - 8)
 
         return _decode_enhanced_packet_block(data, byte_order)
@@ -94,31 +99,23 @@ def _read_block(
         raise NotImplementedError
 
 
-class Stream:
-    _source: BufferedIOBase
-    _last_header_block: Optional[HeaderBlock]
+def stream(source: BufferedIOBase) -> Iterator[Block]:
+    last_header_block = None
 
-    def __init__(self, source: BufferedIOBase) -> None:
-        self._source = source
-        self._last_header_block = None
+    while True:
+        byte_order = last_header_block.byte_order \
+            if last_header_block else None
 
-    def __iter__(self) -> Iterator[Block]:
-        return self
-
-    def __next__(self) -> Block:
-        byte_order = self._last_header_block.byte_order \
-            if self._last_header_block else None
-
-        block = _read_block(self._source, byte_order)
+        block = _read_block(source, byte_order)
 
         if block is None:
-            if self._last_header_block is None:
+            if last_header_block is None:
                 raise EOFError
 
-            raise StopIteration
+            return
         elif isinstance(block, HeaderBlock):
-            self._last_header_block = block
-        elif not self._last_header_block:
+            last_header_block = block
+        elif not last_header_block:
             raise FormatError
 
-        return block
+        yield block

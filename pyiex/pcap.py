@@ -47,14 +47,14 @@ def _decode_interface_description_block(
     data: bytes,
     byte_order: ByteOrder
 ) -> InterfaceDescriptionBlock:
-    return None
+    return "a"
 
 
 def _decode_enhanced_packet_block(
     data: bytes,
     byte_order: ByteOrder
 ) -> EnhancedPacketBlock:
-    return None
+    return "a"
 
 
 def _read_block(
@@ -112,7 +112,7 @@ class Stream:
         block = _read_block(self._source, byte_order)
 
         if block is None:
-            if not self._last_header_block:
+            if self._last_header_block is None:
                 raise EOFError
 
             raise StopIteration

@@ -1,0 +1,14 @@
+[project]
+name = "pyiex"
+version = "0.1.0"
+description = "IEX Exchange market data parser"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic>=2.11.3",
+]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.400",
+]

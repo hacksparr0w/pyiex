@@ -5,6 +5,7 @@ from typing import Any, Iterator
 
 from . import iextp
 from . import pcap
+from . import tops
 
 
 __all__ = (
@@ -27,7 +28,5 @@ def read(stream: BufferedIOBase) -> Iterator[Any]:
         if packet.protocol_id != 0x8003 or packet.channel_id != 1:
             continue
 
-        print(packet)
-
         for message in packet.messages:
-            yield message.getvalue()
+            yield tops.read_message(message)

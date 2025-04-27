@@ -1,4 +1,4 @@
-from io import BytesIO, BufferedIOBase
+from io import BufferedIOBase, BytesIO
 from typing import Iterator, Optional, Union
 
 from pydantic import BaseModel, ConfigDict as ModelConfig

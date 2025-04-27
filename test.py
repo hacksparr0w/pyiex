@@ -9,7 +9,7 @@ def avg(x):
 def main():
     print("timestamp;symbol;bid_price;ask_price")
 
-    aggregation_unit = 1e12
+    aggregation_unit = 1e9
     is_regular_market_hours = False
 
     current_timestamp = None

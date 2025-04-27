@@ -61,16 +61,6 @@ def main():
             current_ask_prices.append(message.ask_price)
             current_bid_prices.append(message.bid_price)
 
-    if current_ask_prices:
-        row = ";".join((
-            current_timestamp,
-            message.symbol,
-            avg(current_bid_prices),
-            avg(current_ask_prices)
-        ))
-
-        print(row)
-
 
 if __name__ == "__main__":
     main()

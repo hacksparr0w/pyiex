@@ -121,7 +121,7 @@ def main():
     }
 
     for i, (name, link) in enumerate(links.items()):
-        print(f"Job {i}")
+        print(f"Job {i}", flush=True)
 
         subprocess.run(
             f"curl -s --output ./data/{name}.pcap.gzip \"{link}\"",
@@ -133,7 +133,7 @@ def main():
         process_file(f"./data/{name}.pcap.gzip", f"./data/{name}-AAPL-1m.csv", aggregation_unit=60 * 1e9)
 
         subprocess.run(f"rm -f ./data/{name}.pcap.gzip", shell=True, check=True)
-        print(f"Finished job {i}")
+        print(f"Finished job {i}", flush=True)
 
 
 if __name__ == "__main__":

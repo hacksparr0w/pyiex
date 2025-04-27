@@ -162,7 +162,7 @@ def _read_system_event_message(
     event = _SystemEventType[stream.read(1)]
     timestamp = _read_timestamp(stream, byte_order)
 
-    return SystemEventMessage(event=event, timestamp=timestamp)
+    return SystemEventMessage.model_construct(event=event, timestamp=timestamp)
 
 
 def _read_security_directory_message(
@@ -176,7 +176,7 @@ def _read_security_directory_message(
     adjusted_poc_price = _read_price(stream, byte_order)
     luld_tier = stream.read(1)
 
-    return SecurityDirectoryMessage(
+    return SecurityDirectoryMessage.model_construct(
         flags=flags,
         timestamp=timestamp,
         symbol=symbol,
@@ -195,7 +195,7 @@ def _read_security_trading_status_message(
     symbol = _read_string(stream, 8)
     reason = _read_string(stream, 4)
 
-    return SecurityTradingStatusMessage(
+    return SecurityTradingStatusMessage.model_construct(
         status=status,
         timestamp=timestamp,
         symbol=symbol,
@@ -211,7 +211,7 @@ def _read_retail_liquidity_indicator_message(
     timestamp = _read_timestamp(stream, byte_order)
     symbol = _read_string(stream, 8)
 
-    return RetailLiquidityIndicatorMessage(
+    return RetailLiquidityIndicatorMessage.model_construct(
         indicator=indicator,
         timestamp=timestamp,
         symbol=symbol
@@ -226,7 +226,7 @@ def _read_operational_halt_status_message(
     timestamp = _read_timestamp(stream, byte_order)
     symbol = _read_string(stream, 8)
 
-    return OperationalHaltStatusMessage(
+    return OperationalHaltStatusMessage.model_construct(
         status=status,
         timestamp=timestamp,
         symbol=symbol
@@ -242,7 +242,7 @@ def _read_short_sale_price_test_message(
     symbol = _read_string(stream, 8)
     detail = stream.read(1)
 
-    return ShortSalePriceTestStatusMessage(
+    return ShortSalePriceTestStatusMessage.model_construct(
         status=status,
         timestamp=timestamp,
         symbol=symbol,
@@ -262,7 +262,7 @@ def _read_quote_update_message(
     ask_price = _read_price(stream, byte_order)
     ask_size = int.from_bytes(stream.read(4), byte_order)
 
-    return QuoteUpdateMessage(
+    return QuoteUpdateMessage.model_construct(
         flags=flags,
         timestamp=timestamp,
         symbol=symbol,
@@ -284,7 +284,7 @@ def _read_trade_report_message(
     price = _read_price(stream, byte_order)
     trade_id = int.from_bytes(stream.read(8), byte_order)
 
-    return TradeReportMessage(
+    return TradeReportMessage.model_construct(
         flags=flags,
         timestamp=timestamp,
         symbol=symbol,
@@ -303,7 +303,7 @@ def _read_official_price_message(
     symbol = _read_string(stream, 8)
     price = _read_price(stream, byte_order)
 
-    return OfficialPriceMessage(
+    return OfficialPriceMessage.model_construct(
         price_type=price_type,
         timestamp=timestamp,
         symbol=symbol,
@@ -322,7 +322,7 @@ def _read_trade_break_message(
     price = _read_price(stream, byte_order)
     trade_id = int.from_bytes(stream.read(8), byte_order)
 
-    return TradeBreakMessage(
+    return TradeBreakMessage.model_construct(
         flags=flags,
         timestamp=timestamp,
         symbol=symbol,
@@ -351,7 +351,7 @@ def _read_auction_information_message(
     lower_auction_collar = _read_price(stream, byte_order)
     upper_auction_collar = _read_price(stream, byte_order)
 
-    return AuctionInformationMessage(
+    return AuctionInformationMessage.model_construct(
         auction_type=auction_type,
         timestamp=timestamp,
         symbol=symbol,

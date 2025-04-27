@@ -48,14 +48,14 @@ def _read_header_block(
     stream: BufferedIOBase,
     byte_order: ByteOrder
 ) -> HeaderBlock:
-    return HeaderBlock(byte_order=byte_order)
+    return HeaderBlock.model_construct(byte_order=byte_order)
 
 
 def _read_interface_description_block(
     stream: BufferedIOBase,
     byte_order: ByteOrder
 ) -> InterfaceDescriptionBlock:
-    return InterfaceDescriptionBlock()
+    return InterfaceDescriptionBlock.model_construct()
 
 
 def _read_enhanced_packet_block(
@@ -67,7 +67,7 @@ def _read_enhanced_packet_block(
     original_length = int.from_bytes(stream.read(4), byte_order)
     payload = BytesIO(stream.read(original_length))
 
-    return EnhancedPacketBlock(payload=payload)
+    return EnhancedPacketBlock.model_construct(payload=payload)
 
 
 def read_block(

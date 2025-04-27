@@ -53,7 +53,7 @@ def read_packet(
 
         messages.append(message)
 
-    return Packet(
+    return Packet.model_construct(
         version=version,
         protocol_id=protocol_id,
         channel_id=channel_id,

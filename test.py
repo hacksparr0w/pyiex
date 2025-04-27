@@ -124,7 +124,7 @@ def main():
         print(f"Job {i}")
 
         subprocess.run(
-            f"curl --output ./data/{name}.pcap.gzip \"{link}\"",
+            f"curl -s --output ./data/{name}.pcap.gzip \"{link}\"",
             shell=True,
             check=True
         )

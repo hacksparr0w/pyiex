@@ -60,5 +60,5 @@ def _decode_system_event_message(
     return SystemEventMessage(event=event, timestamp=timestamp), offset
 
 
-def decode(data: bytes, offset: int, byte_order: ByteOrder = "little") -> Message:
+def read_message(: bytes, offset: int, byte_order: ByteOrder = "little") -> Message:
     pass

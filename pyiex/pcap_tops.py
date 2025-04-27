@@ -1,3 +1,5 @@
+import os
+
 from io import BufferedIOBase
 from typing import Any, Iterator
 
@@ -6,23 +8,26 @@ from . import pcap
 
 
 __all__ = (
-    "stream",
+    "read",
 )
 
 
-def stream(source: BufferedIOBase) -> Iterator[Any]:
-    wrapped = pcap.stream(source)
+def read(stream: BufferedIOBase) -> Iterator[Any]:
+    wrapper = pcap.read(stream)
 
     while True:
-        block = next(wrapped)
+        block = next(wrapper)
 
         if not isinstance(block, pcap.EnhancedPacketBlock):
             continue
 
-        packet = iextp.decode(block.payload[42:])
+        block.payload.seek(42, os.SEEK_CUR)
+        packet = iextp.read_packet(block.payload)
 
         if packet.protocol_id != 0x8003 or packet.channel_id != 1:
             continue
 
+        print(packet)
+
         for message in packet.messages:
-            yield message
+            yield message.getvalue()

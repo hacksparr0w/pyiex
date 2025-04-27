@@ -1,4 +1,8 @@
-from pydantic import BaseModel
+import os
+
+from io import BufferedIOBase, BytesIO
+
+from pydantic import BaseModel, ConfigDict as ModelConfig
 
 from .format import ByteOrder
 
@@ -6,11 +10,13 @@ from .format import ByteOrder
 __all__ = (
     "Packet",
 
-    "decode"
+    "read_packet"
 )
 
 
 class Packet(BaseModel):
+    model_config = ModelConfig(arbitrary_types_allowed=True)
+
     version: int
     protocol_id: int
     channel_id: int
@@ -21,29 +27,29 @@ class Packet(BaseModel):
     sequence_number: int
     sent_at: int
 
-    messages: list[bytes]
+    messages: list[BytesIO]
 
 
-def decode(data: bytes, byte_order: ByteOrder = "little") -> Packet:
-    version = int.from_bytes(data[0:1], byte_order)
-    protocol_id = int.from_bytes(data[2:4], byte_order)
-    channel_id = int.from_bytes(data[4:8], byte_order)
-    session_id = int.from_bytes(data[8:12], byte_order)
-    payload_length = int.from_bytes(data[12:14], byte_order)
-    message_count = int.from_bytes(data[14:16], byte_order)
-    stream_offset = int.from_bytes(data[16:24], byte_order)
-    sequence_number = int.from_bytes(data[24:32], byte_order)
-    sent_at = int.from_bytes(data[32:40], byte_order)
+def read_packet(
+    stream: BufferedIOBase,
+    byte_order: ByteOrder = "little"
+) -> Packet:
+    version = int.from_bytes(stream.read(1), byte_order)
+    stream.seek(1, os.SEEK_CUR)
+    protocol_id = int.from_bytes(stream.read(2), byte_order)
+    channel_id = int.from_bytes(stream.read(4), byte_order)
+    session_id = int.from_bytes(stream.read(4), byte_order)
+    payload_length = int.from_bytes(stream.read(2), byte_order)
+    message_count = int.from_bytes(stream.read(2), byte_order)
+    stream_offset = int.from_bytes(stream.read(8), byte_order)
+    sequence_number = int.from_bytes(stream.read(8), byte_order)
+    sent_at = int.from_bytes(stream.read(8), byte_order)
 
     messages = []
-    offset = 40
 
     for _ in range(message_count):
-        message_length = int.from_bytes(data[offset:offset + 2], byte_order)
-        offset += 2
-
-        message = data[offset:offset + message_length]
-        offset += message_length
+        message_length = int.from_bytes(stream.read(2), byte_order)
+        message = BytesIO(stream.read(message_length))
 
         messages.append(message)
 

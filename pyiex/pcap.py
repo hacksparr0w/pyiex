@@ -1,7 +1,7 @@
-from io import BufferedIOBase
+from io import BytesIO, BufferedIOBase
 from typing import Iterator, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict as ModelConfig
 
 from .format import ByteOrder, FormatError
 
@@ -12,7 +12,8 @@ __all__ = (
     "HeaderBlock",
     "InterfaceDescriptionBlock",
 
-    "stream"
+    "read",
+    "read_block"
 )
 
 
@@ -25,7 +26,9 @@ class InterfaceDescriptionBlock(BaseModel):
 
 
 class EnhancedPacketBlock(BaseModel):
-    payload: bytes
+    model_config = ModelConfig(arbitrary_types_allowed=True)
+
+    payload: BytesIO
 
 
 type Block = Union[
@@ -41,32 +44,37 @@ class _BlockType:
     ENHANCED_PACKET = b"\x06\x00\x00\x00"
 
 
-def _decode_header_block(data: bytes, byte_order: ByteOrder) -> HeaderBlock:
+def _read_header_block(
+    stream: BufferedIOBase,
+    byte_order: ByteOrder
+) -> HeaderBlock:
     return HeaderBlock(byte_order=byte_order)
 
 
-def _decode_interface_description_block(
-    data: bytes,
+def _read_interface_description_block(
+    stream: BufferedIOBase,
     byte_order: ByteOrder
 ) -> InterfaceDescriptionBlock:
     return InterfaceDescriptionBlock()
 
 
-def _decode_enhanced_packet_block(
-    data: bytes,
+def _read_enhanced_packet_block(
+    stream: BufferedIOBase,
     byte_order: ByteOrder
 ) -> EnhancedPacketBlock:
-    original_length = int.from_bytes(data[16:20], byte_order)
-    payload = data[20:20 + original_length]
+    stream.seek(16)
+
+    original_length = int.from_bytes(stream.read(4), byte_order)
+    payload = BytesIO(stream.read(original_length))
 
     return EnhancedPacketBlock(payload=payload)
 
 
-def _read_block(
-    source: BufferedIOBase,
+def read_block(
+    stream: BufferedIOBase,
     byte_order: Optional[ByteOrder]
 ) -> Optional[Block]:
-    buffer = source.read(8)
+    buffer = stream.read(8)
 
     if not buffer:
         return None
@@ -74,7 +82,7 @@ def _read_block(
     block_type, block_length = buffer[0:4], buffer[4:8]
 
     if block_type == _BlockType.HEADER:
-        magic_bytes = source.read(4)
+        magic_bytes = stream.read(4)
         byte_order: ByteOrder
 
         if magic_bytes == b"\x1a\x2b\x3c\x4d":
@@ -84,29 +92,29 @@ def _read_block(
         else:
             raise FormatError
 
-        data = source.read(int.from_bytes(block_length, byte_order) - 12)
+        data = stream.read(int.from_bytes(block_length, byte_order) - 12)
 
-        return _decode_header_block(data, byte_order)
+        return _read_header_block(BytesIO(data), byte_order)
     elif block_type == _BlockType.INTERFACE_DESCRIPTION:
-        data = source.read(int.from_bytes(block_length, byte_order) - 8)
+        data = stream.read(int.from_bytes(block_length, byte_order) - 8)
 
-        return _decode_interface_description_block(data, byte_order)
+        return _read_interface_description_block(BytesIO(data), byte_order)
     elif block_type == _BlockType.ENHANCED_PACKET:
-        data = source.read(int.from_bytes(block_length, byte_order) - 8)
+        data = stream.read(int.from_bytes(block_length, byte_order) - 8)
 
-        return _decode_enhanced_packet_block(data, byte_order)
+        return _read_enhanced_packet_block(BytesIO(data), byte_order)
     else:
         raise NotImplementedError
 
 
-def stream(source: BufferedIOBase) -> Iterator[Block]:
+def read(stream: BufferedIOBase) -> Iterator[Block]:
     last_header_block = None
 
     while True:
         byte_order = last_header_block.byte_order \
             if last_header_block else None
 
-        block = _read_block(source, byte_order)
+        block = read_block(stream, byte_order)
 
         if block is None:
             if last_header_block is None:

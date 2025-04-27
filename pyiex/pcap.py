@@ -1,8 +1,5 @@
-from dataclasses import dataclass
 from io import BufferedIOBase, BytesIO
-from typing import Iterator, Optional, Union
-
-from pydantic import BaseModel, ConfigDict as ModelConfig
+from typing import Iterator, NamedTuple, Optional, Union
 
 from .format import ByteOrder, FormatError
 
@@ -18,17 +15,15 @@ __all__ = (
 )
 
 
-class HeaderBlock(BaseModel):
+class HeaderBlock(NamedTuple):
     byte_order: ByteOrder
 
 
-class InterfaceDescriptionBlock(BaseModel):
+class InterfaceDescriptionBlock(NamedTuple):
     pass
 
 
-class EnhancedPacketBlock(BaseModel):
-    model_config = ModelConfig(arbitrary_types_allowed=True)
-
+class EnhancedPacketBlock(NamedTuple):
     payload: BytesIO
 
 
@@ -49,14 +44,14 @@ def _read_header_block(
     stream: BufferedIOBase,
     byte_order: ByteOrder
 ) -> HeaderBlock:
-    return HeaderBlock.model_construct(byte_order=byte_order)
+    return HeaderBlock(byte_order=byte_order)
 
 
 def _read_interface_description_block(
     stream: BufferedIOBase,
     byte_order: ByteOrder
 ) -> InterfaceDescriptionBlock:
-    return InterfaceDescriptionBlock.model_construct()
+    return InterfaceDescriptionBlock()
 
 
 def _read_enhanced_packet_block(
@@ -68,7 +63,7 @@ def _read_enhanced_packet_block(
     original_length = int.from_bytes(stream.read(4), byte_order)
     payload = BytesIO(stream.read(original_length))
 
-    return EnhancedPacketBlock.model_construct(payload=payload)
+    return EnhancedPacketBlock(payload)
 
 
 def read_block(

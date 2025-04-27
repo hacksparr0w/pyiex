@@ -1,8 +1,6 @@
-from io import BufferedIOBase
 from enum import StrEnum, auto
-from dataclasses import dataclass
-
-from pydantic import BaseModel
+from io import BufferedIOBase
+from typing import NamedTuple
 
 from .format import ByteOrder
 
@@ -48,14 +46,12 @@ _SystemEventType = {
 }
 
 
-@dataclass
-class SystemEventMessage:
+class SystemEventMessage(NamedTuple):
     event: bytes
     timestamp: int
 
 
-@dataclass
-class SecurityDirectoryMessage:
+class SecurityDirectoryMessage(NamedTuple):
     flags: bytes
     timestamp: int
     symbol: str
@@ -64,38 +60,33 @@ class SecurityDirectoryMessage:
     luld_tier: bytes
 
 
-@dataclass
-class SecurityTradingStatusMessage:
+class SecurityTradingStatusMessage(NamedTuple):
     status: bytes
     timestamp: int
     symbol: str
     reason: str
 
 
-@dataclass
-class RetailLiquidityIndicatorMessage:
+class RetailLiquidityIndicatorMessage(NamedTuple):
     indicator: bytes
     timestamp: int
     symbol: str
 
 
-@dataclass
-class OperationalHaltStatusMessage:
+class OperationalHaltStatusMessage(NamedTuple):
     status: bytes
     timestamp: int
     symbol: str
 
 
-@dataclass
-class ShortSalePriceTestStatusMessage:
+class ShortSalePriceTestStatusMessage(NamedTuple):
     status: bytes
     timestamp: int
     symbol: str
     detail: bytes
 
 
-@dataclass
-class QuoteUpdateMessage:
+class QuoteUpdateMessage(NamedTuple):
     flags: bytes
     timestamp: int
     symbol: str
@@ -105,8 +96,7 @@ class QuoteUpdateMessage:
     ask_size: int
 
 
-@dataclass
-class TradeReportMessage:
+class TradeReportMessage(NamedTuple):
     flags: bytes
     timestamp: int
     symbol: str
@@ -115,16 +105,14 @@ class TradeReportMessage:
     trade_id: int
 
 
-@dataclass
-class OfficialPriceMessage:
+class OfficialPriceMessage(NamedTuple):
     price_type: bytes
     timestamp: int
     symbol: str
     price: int
 
 
-@dataclass
-class TradeBreakMessage:
+class TradeBreakMessage(NamedTuple):
     flags: bytes
     timestamp: int
     symbol: int
@@ -133,8 +121,7 @@ class TradeBreakMessage:
     trade_id: int
 
 
-@dataclass
-class AuctionInformationMessage:
+class AuctionInformationMessage(NamedTuple):
     auction_type: bytes
     timestamp: int
     symbol: str

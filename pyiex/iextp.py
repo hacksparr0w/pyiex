@@ -1,9 +1,7 @@
 import os
 
-from dataclasses import dataclass
 from io import BufferedIOBase, BytesIO
-
-from pydantic import BaseModel, ConfigDict as ModelConfig
+from typing import NamedTuple
 
 from .format import ByteOrder
 
@@ -15,8 +13,7 @@ __all__ = (
 )
 
 
-@dataclass
-class Packet:
+class Packet(NamedTuple):
     version: int
     protocol_id: int
     channel_id: int

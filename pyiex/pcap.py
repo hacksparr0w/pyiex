@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from io import BufferedIOBase, BytesIO
 from typing import Iterator, Optional, Union
 

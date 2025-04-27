@@ -1,5 +1,6 @@
 from io import BufferedIOBase
 from enum import StrEnum, auto
+from dataclasses import dataclass
 
 from pydantic import BaseModel
 
@@ -47,12 +48,14 @@ _SystemEventType = {
 }
 
 
-class SystemEventMessage(BaseModel):
+@dataclass
+class SystemEventMessage:
     event: bytes
     timestamp: int
 
 
-class SecurityDirectoryMessage(BaseModel):
+@dataclass
+class SecurityDirectoryMessage:
     flags: bytes
     timestamp: int
     symbol: str
@@ -61,33 +64,38 @@ class SecurityDirectoryMessage(BaseModel):
     luld_tier: bytes
 
 
-class SecurityTradingStatusMessage(BaseModel):
+@dataclass
+class SecurityTradingStatusMessage:
     status: bytes
     timestamp: int
     symbol: str
     reason: str
 
 
-class RetailLiquidityIndicatorMessage(BaseModel):
+@dataclass
+class RetailLiquidityIndicatorMessage:
     indicator: bytes
     timestamp: int
     symbol: str
 
 
-class OperationalHaltStatusMessage(BaseModel):
+@dataclass
+class OperationalHaltStatusMessage:
     status: bytes
     timestamp: int
     symbol: str
 
 
-class ShortSalePriceTestStatusMessage(BaseModel):
+@dataclass
+class ShortSalePriceTestStatusMessage:
     status: bytes
     timestamp: int
     symbol: str
     detail: bytes
 
 
-class QuoteUpdateMessage(BaseModel):
+@dataclass
+class QuoteUpdateMessage:
     flags: bytes
     timestamp: int
     symbol: str
@@ -97,7 +105,8 @@ class QuoteUpdateMessage(BaseModel):
     ask_size: int
 
 
-class TradeReportMessage(BaseModel):
+@dataclass
+class TradeReportMessage:
     flags: bytes
     timestamp: int
     symbol: str
@@ -106,14 +115,16 @@ class TradeReportMessage(BaseModel):
     trade_id: int
 
 
-class OfficialPriceMessage(BaseModel):
+@dataclass
+class OfficialPriceMessage:
     price_type: bytes
     timestamp: int
     symbol: str
     price: int
 
 
-class TradeBreakMessage(BaseModel):
+@dataclass
+class TradeBreakMessage:
     flags: bytes
     timestamp: int
     symbol: int
@@ -122,7 +133,8 @@ class TradeBreakMessage(BaseModel):
     trade_id: int
 
 
-class AuctionInformationMessage(BaseModel):
+@dataclass
+class AuctionInformationMessage:
     auction_type: bytes
     timestamp: int
     symbol: str
@@ -134,6 +146,7 @@ class AuctionInformationMessage(BaseModel):
     extension_number: int
     scheduled_auction_time: int
     auction_book_clearing_price: int
+    collar_reference_price: int
     lower_auction_collar: int
     upper_auction_collar: int
 
@@ -162,7 +175,7 @@ def _read_system_event_message(
     event = _SystemEventType[stream.read(1)]
     timestamp = _read_timestamp(stream, byte_order)
 
-    return SystemEventMessage.model_construct(event=event, timestamp=timestamp)
+    return SystemEventMessage(event, timestamp)
 
 
 def _read_security_directory_message(
@@ -176,13 +189,13 @@ def _read_security_directory_message(
     adjusted_poc_price = _read_price(stream, byte_order)
     luld_tier = stream.read(1)
 
-    return SecurityDirectoryMessage.model_construct(
-        flags=flags,
-        timestamp=timestamp,
-        symbol=symbol,
-        round_lot_size=round_lot_size,
-        adjusted_poc_price=adjusted_poc_price,
-        luld_tier=luld_tier
+    return SecurityDirectoryMessage(
+        flags,
+        timestamp,
+        symbol,
+        round_lot_size,
+        adjusted_poc_price,
+        luld_tier
     )
 
 
@@ -195,11 +208,11 @@ def _read_security_trading_status_message(
     symbol = _read_string(stream, 8)
     reason = _read_string(stream, 4)
 
-    return SecurityTradingStatusMessage.model_construct(
-        status=status,
-        timestamp=timestamp,
-        symbol=symbol,
-        reason=reason
+    return SecurityTradingStatusMessage(
+        status,
+        timestamp,
+        symbol,
+        reason
     )
 
 
@@ -211,10 +224,10 @@ def _read_retail_liquidity_indicator_message(
     timestamp = _read_timestamp(stream, byte_order)
     symbol = _read_string(stream, 8)
 
-    return RetailLiquidityIndicatorMessage.model_construct(
-        indicator=indicator,
-        timestamp=timestamp,
-        symbol=symbol
+    return RetailLiquidityIndicatorMessage(
+        indicator,
+        timestamp,
+        symbol
     )
 
 
@@ -226,10 +239,10 @@ def _read_operational_halt_status_message(
     timestamp = _read_timestamp(stream, byte_order)
     symbol = _read_string(stream, 8)
 
-    return OperationalHaltStatusMessage.model_construct(
-        status=status,
-        timestamp=timestamp,
-        symbol=symbol
+    return OperationalHaltStatusMessage(
+        status,
+        timestamp,
+        symbol
     )
 
 
@@ -242,11 +255,11 @@ def _read_short_sale_price_test_message(
     symbol = _read_string(stream, 8)
     detail = stream.read(1)
 
-    return ShortSalePriceTestStatusMessage.model_construct(
-        status=status,
-        timestamp=timestamp,
-        symbol=symbol,
-        detail=detail
+    return ShortSalePriceTestStatusMessage(
+        status,
+        timestamp,
+        symbol,
+        detail
     )
 
 
@@ -262,14 +275,14 @@ def _read_quote_update_message(
     ask_price = _read_price(stream, byte_order)
     ask_size = int.from_bytes(stream.read(4), byte_order)
 
-    return QuoteUpdateMessage.model_construct(
-        flags=flags,
-        timestamp=timestamp,
-        symbol=symbol,
-        bid_size=bid_size,
-        bid_price=bid_price,
-        ask_price=ask_price,
-        ask_size=ask_size
+    return QuoteUpdateMessage(
+        flags,
+        timestamp,
+        symbol,
+        bid_size,
+        bid_price,
+        ask_price,
+        ask_size
     )
 
 
@@ -284,13 +297,13 @@ def _read_trade_report_message(
     price = _read_price(stream, byte_order)
     trade_id = int.from_bytes(stream.read(8), byte_order)
 
-    return TradeReportMessage.model_construct(
-        flags=flags,
-        timestamp=timestamp,
-        symbol=symbol,
-        size=size,
-        price=price,
-        trade_id=trade_id
+    return TradeReportMessage(
+        flags,
+        timestamp,
+        symbol,
+        size,
+        price,
+        trade_id
     )
 
 
@@ -303,11 +316,11 @@ def _read_official_price_message(
     symbol = _read_string(stream, 8)
     price = _read_price(stream, byte_order)
 
-    return OfficialPriceMessage.model_construct(
-        price_type=price_type,
-        timestamp=timestamp,
-        symbol=symbol,
-        price=price
+    return OfficialPriceMessage(
+        price_type,
+        timestamp,
+        symbol,
+        price
     )
 
 
@@ -322,13 +335,13 @@ def _read_trade_break_message(
     price = _read_price(stream, byte_order)
     trade_id = int.from_bytes(stream.read(8), byte_order)
 
-    return TradeBreakMessage.model_construct(
-        flags=flags,
-        timestamp=timestamp,
-        symbol=symbol,
-        size=size,
-        price=price,
-        trade_id=trade_id
+    return TradeBreakMessage(
+        flags,
+        timestamp,
+        symbol,
+        size,
+        price,
+        trade_id
     )
 
 
@@ -351,21 +364,22 @@ def _read_auction_information_message(
     lower_auction_collar = _read_price(stream, byte_order)
     upper_auction_collar = _read_price(stream, byte_order)
 
-    return AuctionInformationMessage.model_construct(
-        auction_type=auction_type,
-        timestamp=timestamp,
-        symbol=symbol,
-        paired_shares=paired_shares,
-        reference_price=reference_price,
-        indicative_clearing_price=indicative_clearing_price,
-        imbalance_shares=imbalance_shares,
-        imbalance_side=imbalance_side,
-        extension_number=extension_number,
-        scheduled_auction_time=scheduled_auction_time,
-        auction_book_clearing_price=auction_book_clearing_price,
-        collar_reference_price=collar_reference_price,
-        lower_auction_collar=lower_auction_collar,
-        upper_auction_collar=upper_auction_collar
+
+    return AuctionInformationMessage(
+        auction_type,
+        timestamp,
+        symbol,
+        paired_shares,
+        reference_price,
+        indicative_clearing_price,
+        imbalance_shares,
+        imbalance_side,
+        extension_number,
+        scheduled_auction_time,
+        auction_book_clearing_price,
+        collar_reference_price,
+        lower_auction_collar,
+        upper_auction_collar
     )
 
 

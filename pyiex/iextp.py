@@ -1,5 +1,6 @@
 import os
 
+from dataclasses import dataclass
 from io import BufferedIOBase, BytesIO
 
 from pydantic import BaseModel, ConfigDict as ModelConfig
@@ -14,9 +15,8 @@ __all__ = (
 )
 
 
-class Packet(BaseModel):
-    model_config = ModelConfig(arbitrary_types_allowed=True)
-
+@dataclass
+class Packet:
     version: int
     protocol_id: int
     channel_id: int
@@ -53,15 +53,15 @@ def read_packet(
 
         messages.append(message)
 
-    return Packet.model_construct(
-        version=version,
-        protocol_id=protocol_id,
-        channel_id=channel_id,
-        session_id=session_id,
-        payload_length=payload_length,
-        message_count=message_count,
-        stream_offset=stream_offset,
-        sequence_number=sequence_number,
-        sent_at=sent_at,
-        messages=messages
+    return Packet(
+        version,
+        protocol_id,
+        channel_id,
+        session_id,
+        payload_length,
+        message_count,
+        stream_offset,
+        sequence_number,
+        sent_at,
+        messages
     )

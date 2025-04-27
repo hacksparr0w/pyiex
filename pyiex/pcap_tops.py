@@ -14,11 +14,7 @@ __all__ = (
 
 
 def read(stream: BufferedIOBase) -> Iterator[Any]:
-    wrapper = pcap.read(stream)
-
-    while True:
-        block = next(wrapper)
-
+    for block in pcap.read(stream):
         if not isinstance(block, pcap.EnhancedPacketBlock):
             continue
 

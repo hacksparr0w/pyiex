@@ -44,7 +44,7 @@ def main():
 
             if current_timestamp is None:
                 current_timestamp = message.timestamp
-            elif (current_timestamp + aggregation_unit) > message.timestamp:
+            elif (current_timestamp + aggregation_unit) < message.timestamp:
                 row = ";".join((
                     str(current_timestamp),
                     message.symbol,

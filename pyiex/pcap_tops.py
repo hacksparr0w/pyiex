@@ -15,7 +15,7 @@ __all__ = (
 
 def read(stream: BufferedIOBase) -> Iterator[Any]:
     for block in pcap.read(stream):
-        if not isinstance(block, pcap.EnhancedPacketBlock):
+        if block.__class__.__name__ != pcap.EnhancedPacketBlock.__name__:
             continue
 
         block.payload.seek(42, os.SEEK_CUR)

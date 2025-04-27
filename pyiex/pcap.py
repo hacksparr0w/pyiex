@@ -117,7 +117,7 @@ def read(stream: BufferedIOBase) -> Iterator[Block]:
                 raise EOFError
 
             return
-        elif isinstance(block, HeaderBlock):
+        elif block.__class__.__name__ == HeaderBlock.__name__:
             last_header_block = block
         elif not last_header_block:
             raise FormatError

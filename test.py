@@ -1,22 +1,24 @@
-import cProfile
-
 import pyiex.pcap_tops
 import pyiex.tops
 
 
 def main():
-    with open("./test.pcap", "rb") as stream:
-        for i, message in enumerate(pyiex.pcap_tops.read(stream)):
-            if i == 1_000_000:
-                return
+    print("timestamp;symbol;bid_price;bid_size;ask_price;ask_size")
 
-            if not isinstance(message, pyiex.tops.QuoteUpdateMessage):
+    with open("./test.pcap", "rb") as stream:
+        for message in pyiex.pcap_tops.read(stream):
+
+            if message.__class__.__name__ != \
+                pyiex.tops.QuoteUpdateMessage.__name__:
                 continue
 
             if message.symbol != "AAPL":
                 continue
-            
-            row = ",".join((
+
+            if message.bid_price == 0 or message.ask_price == 0:
+                continue
+
+            row = ";".join((
                 str(message.timestamp),
                 message.symbol,
                 str(message.bid_price),
